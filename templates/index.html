@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Consultas a la IA | VocatiQ</title>
+  <style>
+    /* ======== ESTILO VOCATIQ ======== */
+    body {
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      background: linear-gradient(180deg, #f9fafb 0%, #eef3f7 100%);
+      color: #2b2b2b;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: #ffffff;
+      width: 90%;
+      max-width: 700px;
+      margin-top: 60px;
+      padding: 40px 50px;
+      border-radius: 18px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: #004aad;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #6b6b6b;
+      margin-bottom: 25px;
+      font-size: 0.95em;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      text-align: left;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    select, textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #cfd8dc;
+      font-size: 1em;
+      outline: none;
+      transition: 0.2s;
+    }
+
+    select:focus, textarea:focus {
+      border-color: #004aad;
+      box-shadow: 0 0 0 2px rgba(0, 74, 173, 0.1);
+    }
+
+    button {
+      background: linear-gradient(90deg, #004aad 0%, #0072ff 100%);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(90deg, #003b8c 0%, #0060e6 100%);
+      transform: translateY(-1px);
+    }
+
+    h3 {
+      text-align: left;
+      margin-top: 30px;
+      color: #004aad;
+      font-size: 1.1em;
+    }
+
+    pre {
+      background: #f5f7fa;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: left;
+      white-space: pre-wrap;
+      font-size: 0.95em;
+      color: #333;
+      border: 1px solid #e0e0e0;
+    }
+
+    footer {
+      margin-top: 30px;
+      color: #999;
+      font-size: 0.8em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">VocatiQ 🤖</div>
+    <div class="subtitle">Asistente de orientación profesional impulsado por IA</div>
+
+    <label for="carrera">Selecciona una carrera:</label>
+    <select id="carrera">
+      <option value="">-- Cargando carreras... --</option>
+    </select>
+
+    <label for="query">Haz tu consulta:</label>
+    <textarea id="query" rows="3" placeholder="Ejemplo: ¿Cuál es el perfil profesional de esta carrera?"></textarea>
+
+    <button id="ask-btn">🔍 Consultar</button>
+
+    <h3>Respuesta:</h3>
+    <pre id="answer"></pre>
+
+    <footer>© 2025 VocatiQ | Inteligencia para decisiones vocacionales</footer>
+  </div>
+
+  <script>
+    // 🚀 Cargar carreras al iniciar
+    window.onload = async () => {
+      try {
+        const res = await fetch('/carreras');
+        const carreras = await res.json();
+
+        const select = document.getElementById('carrera');
+        select.innerHTML = '<option value="">-- Selecciona una carrera --</option>';
+
+        carreras.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c;
+          opt.textContent = c;
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        console.error("Error al cargar las carreras:", err);
+      }
+    };
+
+    // 🔍 Consultar IA
+    document.getElementById('ask-btn').onclick = async () => {
+      const query = document.getElementById('query').value.trim();
+      const carrera = document.getElementById('carrera').value;
+
+      if (!query || !carrera) {
+        document.getElementById('answer').textContent =
+          "⚠️ Debes seleccionar una carrera y escribir una pregunta.";
+        return;
+      }
+
+      const res = await fetch('/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, carrera })
+      });
+
+      const data = await res.json();
+      document.getElementById('answer').textContent =
+        data.answer || "No se encontró información relevante.";
+    };
+  </script>
+</body>
+</html>
