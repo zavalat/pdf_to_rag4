@@ -7,3 +7,4 @@ pdfplumber==0.11.1
 openai==1.50.2
 torch>=1.13.1
 transformers>=4.39.0
+huggingface_hub==0.19.4
