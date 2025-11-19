@@ -245,7 +245,6 @@ def preload_pdfs():
 # Ejecutar la precarga en segundo plano
 threading.Thread(target=preload_pdfs, daemon=True).start()
 
-
 # =======================
 # 🚀 SERVIDOR FLASK
 # =======================
