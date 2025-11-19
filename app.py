@@ -1,4 +1,21 @@
-print("=== VERSION EJECUTADA POR AZURE === 2025-11-19 ===")
+import os
+
+# === FIX PARA AZURE Y OPENAI ===
+# Azure App Service mete variables de proxy automáticamente
+# y rompen el cliente oficial de OpenAI al iniciar.
+for var in [
+    "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY",
+    "http_proxy", "https_proxy", "all_proxy"
+]:
+    if var in os.environ:
+        print(f"[AZURE FIX] Eliminando variable proxy: {var}")
+        os.environ.pop(var, None)
+
+# Asegura que OpenAI no use ningún proxy
+os.environ["NO_PROXY"] = "*"
+
+print("### FIX DE PROXIES APLICADO EN AZURE ###")
+
 
 from flask import Flask, request, render_template, jsonify
 import os, uuid, fitz, threading, json
@@ -9,18 +26,6 @@ from openai import OpenAI
 # ⚙️ CARGAR CONFIGURACIÓN
 # ========================
 
-
-import os
-
-# --- FIX AZURE PROXY INJECTION ---
-REMOVE = ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"]
-
-for var in REMOVE:
-    if var in os.environ:
-        print(f"[FIX] Removing proxy var: {var}")
-        os.environ.pop(var, None)
-
-os.environ["NO_PROXY"] = "*"
 
 with open("config.json", "r", encoding="utf-8") as f:
     cfg = json.load(f)
