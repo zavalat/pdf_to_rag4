@@ -10,15 +10,15 @@ from openai import OpenAI
 
 import os
 
-# Eliminar TODOS los proxies que Azure inyecta
-for var in [
-    "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY",
-    "http_proxy", "https_proxy",
-    "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE"
-]:
-    if var in os.environ:
-        del os.environ[var]
+# --- FIX AZURE PROXY INJECTION ---
+REMOVE = ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"]
 
+for var in REMOVE:
+    if var in os.environ:
+        print(f"[FIX] Removing proxy var: {var}")
+        os.environ.pop(var, None)
+
+os.environ["NO_PROXY"] = "*"
 
 with open("config.json", "r", encoding="utf-8") as f:
     cfg = json.load(f)
