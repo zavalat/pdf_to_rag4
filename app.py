@@ -7,6 +7,19 @@ from openai import OpenAI
 # ⚙️ CARGAR CONFIGURACIÓN
 # ========================
 
+
+import os
+
+# Eliminar TODOS los proxies que Azure inyecta
+for var in [
+    "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY",
+    "http_proxy", "https_proxy",
+    "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE"
+]:
+    if var in os.environ:
+        del os.environ[var]
+
+
 with open("config.json", "r", encoding="utf-8") as f:
     cfg = json.load(f)
 
@@ -28,10 +41,9 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 client = OpenAI(
     api_key=OPENAI_API_KEY,
-    # Azure mete variables HTTP_PROXY que rompen el cliente,
-    # así que apagamos completamente el uso de proxies:
-    http_client=None
+    base_url="https://api.openai.com/v1"
 )
+
 
 
 # Tamaño del vector de OpenAI text-embedding-3-small
