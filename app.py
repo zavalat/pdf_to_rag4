@@ -1,6 +1,5 @@
 from flask import Flask, request, render_template, jsonify
 import os, uuid, fitz, threading, json
-from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient, models
 from openai import OpenAI
 
@@ -23,8 +22,23 @@ app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Modelo de embeddings
-encoder = SentenceTransformer("all-MiniLM-L6-v2")
+# ========================
+# 🤖 CLIENTE OPENAI
+# ========================
+
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Tamaño del vector de OpenAI text-embedding-3-small
+VECTOR_SIZE = 1536
+
+# Función para obtener embeddings desde OpenAI
+def embed(text):
+    response = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=text
+    )
+    return response.data[0].embedding
+
 
 # ===============================
 # 🌐 QDRANT CLOUD (Base vectorial)
@@ -35,7 +49,7 @@ qdrant = QdrantClient(
     api_key=QDRANT_API_KEY
 )
 
-# Crear colección si no existe (CASE-INSENSITIVE FIX)
+# Crear colección si no existe
 collections = qdrant.get_collections().collections
 collection_names = [c.name.lower() for c in collections]
 
@@ -43,7 +57,7 @@ if "pdf_knowledge" not in collection_names:
     qdrant.create_collection(
         collection_name="pdf_knowledge",
         vectors_config=models.VectorParams(
-            size=encoder.get_sentence_embedding_dimension(),
+            size=VECTOR_SIZE,
             distance=models.Distance.COSINE
         )
     )
@@ -51,11 +65,6 @@ if "pdf_knowledge" not in collection_names:
 else:
     print("📁 Colección encontrada: pdf_knowledge")
 
-# ========================
-# 🤖 CLIENTE OPENAI
-# ========================
-
-client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Lista global de carreras
 loaded_carreras = []
@@ -108,9 +117,12 @@ def upload_pdf():
 
     text = extract_text_from_pdf(path)
     chunks = chunk_text(text)
-    vectors = [encoder.encode(c).tolist() for c in chunks]
+
+    # Generar embeddings desde OpenAI
+    vectors = [embed(c) for c in chunks]
     payloads = [{"text": c, "file": file.filename} for c in chunks]
 
+    # Guardar en Qdrant
     qdrant.upsert(
         collection_name="pdf_knowledge",
         points=models.Batch(
@@ -132,7 +144,7 @@ def query_pdf():
     if not query:
         return jsonify({"error": "No se recibió la consulta."}), 400
 
-    query_vector = encoder.encode(query).tolist()
+    query_vector = embed(query)
 
     if carrera:
         filter_condition = models.Filter(
@@ -162,6 +174,7 @@ def query_pdf():
     )
 
     answer = completion.choices[0].message.content
+
     return jsonify({"answer": answer, "context": context})
 
 
@@ -182,7 +195,7 @@ def preload_pdfs():
         print("⚠️ No hay PDFs en pdf_repo.")
         return
 
-    # OBTENER ARCHIVOS YA INDEXADOS (Qdrant CLOUD FIX)
+    # Obtener archivos ya indexados
     try:
         points, _ = qdrant.scroll(
             collection_name="pdf_knowledge",
@@ -200,7 +213,6 @@ def preload_pdfs():
         print("⚠️ Error leyendo datos existentes:", e)
         indexed_files = set()
 
-    # INDEXAR SOLO LOS NUEVOS
     for pdf_file in files:
         if pdf_file in indexed_files:
             print(f"⏭️ PDF ya indexado: {pdf_file}")
@@ -212,7 +224,8 @@ def preload_pdfs():
         path = os.path.join(repo_path, pdf_file)
         text = extract_text_from_pdf(path)
         chunks = chunk_text(text)
-        vectors = [encoder.encode(c).tolist() for c in chunks]
+
+        vectors = [embed(c) for c in chunks]
         payloads = [{"text": c, "file": pdf_file, "carrera": carrera} for c in chunks]
 
         qdrant.upsert(
