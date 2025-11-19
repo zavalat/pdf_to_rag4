@@ -1,5 +1,4 @@
 import os
-
 # === FIX PARA AZURE Y OPENAI ===
 # Azure App Service mete variables de proxy automáticamente
 # y rompen el cliente oficial de OpenAI al iniciar.
