@@ -26,7 +26,13 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # 🤖 CLIENTE OPENAI
 # ========================
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(
+    api_key=OPENAI_API_KEY,
+    # Azure mete variables HTTP_PROXY que rompen el cliente,
+    # así que apagamos completamente el uso de proxies:
+    http_client=None
+)
+
 
 # Tamaño del vector de OpenAI text-embedding-3-small
 VECTOR_SIZE = 1536
