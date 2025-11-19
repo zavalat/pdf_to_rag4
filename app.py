@@ -1,3 +1,5 @@
+print("=== VERSION EJECUTADA POR AZURE === 2025-11-19 ===")
+
 from flask import Flask, request, render_template, jsonify
 import os, uuid, fitz, threading, json
 from qdrant_client import QdrantClient, models
